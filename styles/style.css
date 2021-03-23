@@ -135,10 +135,34 @@ img {
     background-image: radial-gradient( circle farthest-corner at 10% 20%, rgb(163, 168, 214) 0%, rgb(205, 216, 226) 81.3% );
 }
 
+.user_card a {
+    display: block; /* Ссылка как блочный элемент */
+    height: 100%;
+    text-decoration: none;
+    color: black;
+}
+.user_card:hover {
+     box-shadow:
+        1px 1px #A3A8D6,
+        2px 2px #A3A8D6,
+        3px 3px #A3A8D6,
+        4px 4px #A3A8D6,
+        5px 5px #A3A8D6;
+    -webkit-transform: translateX(-7px);
+    transform: translateX(-7px);
+    transition:all 0.3s ease;
+}
+
 .courses_list {
     width: 90%;
     margin-left: auto;
     margin-right: auto;
+}
+
+.user_information_card {
+    text-align: center;
+    margin: 25px 12.5% 0 12.5%;
+    width: 75%;
 }
 
 .card_column {
