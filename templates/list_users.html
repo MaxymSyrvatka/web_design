@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form action="">
+    <div class="padding_container">
+        <h1>Information about all users</h1>
+        <p>Here you can get information about every user.</p>
+        <div class="form_card">
+            <select name="users" onchange="showUser(this.value)">
+            <option value="">Select a user:</option>
+            {% for user in users %}
+                <option value="{{ user.id }}">{{ user.name }} {{ user.surname }}</option>
+            {% endfor %}
+            </select>
+        </div>
+    </div>
+</form>
+<br>
+<div class="user_information_card" id="card">
+    <div class="profile_card">
+        <div class="flex-row-center">
+            <div class="container">
+                <h3 id="name"></h3>
+                <p class="role" id="role"></p>
+                <p id="email"></p>
+                <p id="age"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showUser(id) {
+  var xhttp;
+  if (id == "") {
+    document.getElementById("card").style.display = "none";
+  }
+  xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      var res = JSON.parse(xhttp.responseText)
+      document.getElementById("card").style.display = "";
+      document.getElementById("name").innerHTML = res.name + " " + res.surname;
+      document.getElementById("role").innerHTML = res.role;
+      document.getElementById("email").innerHTML = "Email: " + res.email;
+      document.getElementById("age").innerHTML = "Age: " + res.age;
+    }
+  };
+  xhttp.open("GET", "/users_list/"+id, true);
+  xhttp.send();
+}
+</script>
+{% endblock %}

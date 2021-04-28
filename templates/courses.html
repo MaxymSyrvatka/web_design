@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form action="">
+    <div class="padding_container">
+        <h1>Information about all courses</h1>
+        <p>Here you can get information about every course.</p>
+        <div class="form_card">
+            <select name="courses" onchange="showCourse(this.value)">
+            <option value="">Select a course:</option>
+            {% for course in courses %}
+                <option value="{{ course.id }}">{{course.name}}</option>
+            {% endfor %}
+            </select>
+        </div>
+    </div>
+</form>
+<br>
+<div class="user_information_card" id="card">
+    <div class="profile_card">
+        <div class="flex-row-center">
+            <div class="container">
+                <h3 id="name"></h3>
+                <p class="role" id="student_number"></p>
+                <p class="courses_list" id="description"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showCourse(id) {
+  var xhttp;
+  if (id == "") {
+    document.getElementById("card").style.display = "none";
+  }
+  xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      var res = JSON.parse(xhttp.responseText)
+      document.getElementById("card").style.display = "";
+      document.getElementById("name").innerHTML = res.name;
+      document.getElementById("student_number").innerHTML = "Count of students: " + res.student_number;
+      document.getElementById("description").innerHTML = res.description;
+    }
+  };
+  xhttp.open("GET", "/courses/"+id, true);
+  xhttp.send();
+}
+</script>
+{% endblock %}

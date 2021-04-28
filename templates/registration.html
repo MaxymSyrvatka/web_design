@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <form method="POST">
+        <div class="padding_container">
+        <h1>Register</h1>
+        <p>Please fill in this form to create an account.</p>
+        <div class="form_card">
+            <label for="name"><b>Name</b></label>
+            <div>
+                <input type="text" placeholder="Name" id="name" name="name" required>
+            </div>
+            <label for="last-name"><b>Last name</b></label>
+            <div>
+                <input type="text" placeholder="Last name" id="last-name" name="last_name" required>
+            </div>
+            <label for="email"><b>Email</b></label>
+            <div>
+                <input type="text" placeholder="Email" id="email" name="email" required>
+            </div>
+            <label for="psw"><b>Password</b></label>
+            <div>
+                <input type="password" placeholder="Enter Password" id="psw" name="password" required>
+            </div>
+            <label for="age"><b>Age</b></label>
+            <div>
+                <input type="text" placeholder="Enter Age" id="age" name="age" required>
+            </div>
+            <label><b>Role</b></label>
+            <div>
+                <select name="role">
+                    <option value="0">Select role:</option>
+                    <option value="student">Student</option>
+                    <option value="tutor">Tutor</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex-row-center">
+            <button type="submit" class="confirm_button" >Confirm</button>
+            <button type="button" class="cancel_button">Cancel</button>
+        </div>
+        </div>
+    </form>
+{% endblock %}
+<!--<script>-->
+<!--    $('#clickme').click( function() {-->
+<!--    var data = save_input(); // data-->
+
+<!--    data['_sid'] = $survey_id;  // survey_id injected from flask-->
+<!--    data['_uip'] = $user_ip; // user_ip injected from flask, request.remote_addr-->
+
+<!--    $.ajax({-->
+<!--        type : "POST",-->
+<!--        url : "{{ url_for('mod.load_ajax') }}",-->
+<!--        data: JSON.stringify(data),-->
+<!--        contentType: 'application/json;charset=UTF-8',-->
+<!--        success: function(result) {-->
+<!--            console.log(result);-->
+<!--        }-->
+<!--    });-->
+
+<!--    console.log(data);-->
+<!--});-->
+<!--</script>-->

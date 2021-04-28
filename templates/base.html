@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Online Learning API</title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css"/>
+    <link rel="stylesheet" type="text/css" href="/styles/style.css"/>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('profile') }}" class="logo" >Online Learning API</a>
+            {% else %}
+            <a href="{{ url_for('index') }}" class="logo" >Online Learning API</a>
+            {% endif %}
+            <a href="{{ url_for('show_all_users') }}">Users</a>
+            <a href="{{ url_for('show_all_courses') }}">Courses</a>
+        </div>
+        <div class="header-right">
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('logout') }}">Log out</a>
+            {% else %}
+            <a href="{{ url_for('login') }}">Log in</a>
+            <a href="{{ url_for('create_user') }}">Create user</a>
+            {% endif %}
+        </div>
+    </div>
+    {% block content %}
+    {% endblock %}
+</body>

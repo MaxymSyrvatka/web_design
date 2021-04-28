@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <form method="post">
+      <div class="padding_container">
+        <h1>New request</h1>
+        <div class="form_card">
+            <label for="name"><b>Course name</b></label>
+            <div>
+                <input type="text" placeholder="Course name" id="name" name="name" required>
+            </div>
+       </div>
+
+        <div class="flex-row-center">
+            <button type="submit" class="confirm_button" >Confirm</button>
+            <button type="button" class="cancel_button">Cancel</button>
+        </div>
+      </div>
+    </form>
+{% endblock %}

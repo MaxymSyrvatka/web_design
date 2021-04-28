@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="row">
+        <div class="leftcolumn">
+            <div class="card_column">
+              <div class="head">
+                <h2>My Requests</h2>
+                    <div class="actions">
+                        {% if current_user.role == roles["student"] %}
+                        <a class="add" href="{{ url_for('create_request') }}"><i class="fas fa-plus"></i></a>
+                        {% endif %}
+                    </div>
+              </div>
+                {% if current_user.role == roles["tutor"] %}
+                {% for request in requests %}
+                {% if request.status == status["approved"] %}
+                <div class="approved_request">
+                    <div class="request_card">
+                        <h3>{{course_request[request.id]}}</h3>
+                    </div>
+                </div>
+                {% endif %}
+                {% if request.status == status["disapproved"] %}
+                <div class="disapproved_request">
+                    <div class="request_card">
+                        <h3>{{course_request[request.id]}}</h3>
+                    </div>
+                </div>
+                {% endif %}
+                {% if request.status == status["sent"] %}
+                <div class="sent_request">
+                    <div class="request_card">
+                        <h3>{{course_request[request.id]}}</h3>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        <div class="centercolumn">
+            <div class="profile_card">
+                <div class="flex-row-center">
+                    <img src="{{url_for('static', filename='student.png')}}" alt="profile-picture" border="0" />
+                    <div class="container">
+                      <div class="head">
+                          <h1>{{current_user.name}} {{current_user.surname}}</h1>
+                          <div class="actions">
+                              <a class="edit" href="{{ url_for('update_user', user_id = current_user.id) }}"><i class="fas fa-edit"></i></a>
+                              <a class="delete" href="{{ url_for('delete_user', user_id = current_user.id) }}"><i class="fas fa-trash"></i></a>
+                          </div>
+                      </div>
+                      <p>Role: {{current_user.role}}</p>
+                      <p>Age: {{current_user.age}}</p>
+                      <p>Email: {{current_user.email}}</p>
+                      <h4>My Courses</h4>
+                      {% for course in courses %}
+                      <p>{{course.name}}</p>
+                      {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="rightcolumn">
+            <div class="card_column">
+                <div class="head">
+                    <h2>My Courses</h2>
+                    <div class="actions">
+                        {% if current_user.role == roles["tutor"] %}
+                        <a class="add" href="{{ url_for('create_course') }}"><i class="fas fa-plus"></i></a>
+                        {% endif %}
+                    </div>
+              </div>
+              {% for course in courses %}
+              <div class="course_card">
+                  <h2>{{course.name}}</h2>
+                  <p>Tutor: {{tutor_name[course.tutor_id]}}</p>
+                  <p>Count of students: {{course.student_number}}</p>
+                  <div class="flex-row-center">
+                      <div class="actions">
+                          <a class="edit" href="{{ url_for('update_course', course_id = course.id) }}"><i class="fas fa-edit"></i></a>
+                          <a class="delete" href="{{ url_for('delete_course', course_id = course.id) }}"><i class="fas fa-trash"></i></a>
+                      </div>
+                  </div>
+              </div>
+              {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
