@@ -1,11 +1,10 @@
-from flask import Flask, request, jsonify, session, redirect, render_template, url_for
+from flask import Flask, request, jsonify, redirect, render_template, url_for, json
 from flask_bcrypt import Bcrypt, check_password_hash
 from flask_httpauth import HTTPBasicAuth
-from integer import Integer
 from marshmallow import ValidationError
-from models import Session, User, Course, Request, Role, RequestStatus
+from backend.models import Session, User, Course, Request, Role, RequestStatus
 from flask_login import login_user, LoginManager, login_required, logout_user, current_user
-from schemas import UserSchema, CourseSchema, RequestSchema
+from backend.schemas import UserSchema, CourseSchema, RequestSchema
 
 
 app = Flask(__name__, template_folder="templates", static_folder="templates/styles")
@@ -28,21 +27,17 @@ def load_user(user_id):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-
-        username = request.form['username']
-        password = request.form['password']
+    if request.method == "POST":
+        user_data = request.json
+        username = user_data['email']
+        password = user_data['password']
 
         user = s.query(User).filter(User.email == username).one_or_none()
-        print(user)
         if user is not None:
             if username and password:
                 if check_password_hash(user.password, password):
                     login_user(user)
-                    return redirect(url_for('profile'))
-        return render_template('sign_in.html')
-
-    return render_template('sign_in.html')
+                    return {"message": "You are log in!"}
 
 
 @app.route('/')
@@ -68,22 +63,19 @@ def profile():
     for course in courses:
         tutor = s.query(User).filter(User.id == current_user.id).one_or_none()
         tutor_name[current_user.id] = tutor.name
-    print(course_request)
-    return render_template('profile.html', courses=courses, tutor_name=tutor_name, roles=roles, requests=requests,
-                           status=status, course_request=course_request)
+    courses = CourseSchema(many=True).dump(courses)
+    user = UserSchema().dump(current_user)
+    requests = RequestSchema(many=True).dump(requests)
+
+    return jsonify(user=user, requests=requests, courses=courses)
+    # return render_template('profile.html', courses=courses, roles=roles, requests=requests,
+    #                       status=status, course_request=course_request)
 
 
-@app.route('/users_list', methods=['GET', 'POST'])
+@app.route('/users_list', methods=['GET'])
 def show_all_users():
     users = s.query(User).all()
-    return render_template("list_users.html", users=users)
-
-
-@app.route('/users_list/<user_id>')
-def show_all_users_ajax(user_id):
-    user = s.query(User).filter(User.id == user_id).one_or_none()
-    role = "Student" if user.role == Role.student else "Tutor"
-    return {"name": user.name, "surname": user.surname, "role": role, "age": user.age, "email": user.email}
+    return jsonify(UserSchema(many=True).dump(users))
 
 
 @app.route('/logout')
@@ -93,70 +85,74 @@ def logout():
     return redirect(url_for('index'))
 
 
-@app.route('/user', methods=['GET', 'POST'])
+@app.route('/user', methods=['POST'])
 def create_user():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        name = request.form.get('name')
-        surname = request.form.get('last_name')
-        password = request.form.get('password')
-        age = request.form.get('age')
-        role = request.form.get('role')
+    autoinc = len(s.query(User).all())
+    user_data = request.json
+    user_schema = UserSchema()
+    parsed = {
+        'id': autoinc + 1,
+        'email': user_data['email'],
+        'name': user_data['name'],
+        'surname': user_data['surname'],
+        'password': bcrypt.generate_password_hash(user_data['password']).decode('utf-8'),
+        'age': user_data['age'],
+        'role': user_data['role']
+    }
 
-        if (s.query(User).filter(User.email == email).one_or_none() is not None):
-            return redirect(url_for('create_user'))
-        user = User(email=email, name=name, surname=surname, password=bcrypt.generate_password_hash(password).decode('utf-8'),
-                    age=age, role=role)
-
-        s.add(user)
-        s.commit()
-        return redirect(url_for('login'))
-    return render_template("registration.html")
+    user = user_schema.load(parsed)
+    s.add(user)
+    s.commit()
+    return 'User is created!'
 
 
-@app.route('/user/<user_id>')
+@app.route('/user/<user_id>', methods=["GET"])
 def show_user(user_id):
-    schema = UserSchema()
     user = s.query(User).filter(User.id == user_id).one_or_none()
 
-    return render_template("student.html", user=user)
+    user_schema = UserSchema(exclude=['password'])
+    user_res = user_schema.dump(user)
+    return jsonify({'student': user_res})
 
 
-@app.route('/user/<user_id>/update', methods=['GET', 'POST'])
+@app.route('/user/<user_id>/update', methods=['PUT'])
 def update_user(user_id):
+    user_data = request.json
+    user_schema = UserSchema()
     user = s.query(User).filter(User.id == user_id).one_or_none()
-    if request.method == "POST":
-        user_schema = UserSchema()
 
-        email = request.form.get('email')
-        name = request.form.get('name')
-        surname = request.form.get('last_name')
-        age = request.form.get('age')
+    try:
+        user_schema.dump(user)
+    except ValidationError as err:
+        return 'invalid id', 400
+    if user is None:
+        return 'The user doesn`t exist', 404
 
-        try:
-            user_schema.dump(user)
-        except ValidationError as err:
-            return 'invalid id', 400
-        if user is None:
-            return 'The user doesn`t exist', 404
+    if current_user.email != user.email:
+        return 'You don`t have a permission to update this user!', 401
 
-        if current_user.email != user.email:
-            return 'You don`t have a permission to update this user!', 401
+    parsed = {
+        "id": user.id,
+        "email": user_data['email'],
+        "name": user_data['name'],
+        "surname": user_data['surname'],
+        "age": user_data["age"],
 
-        user.name = name
-        user.surname = surname
-        user.email = email
-        user.age = age
-        s.commit()
-        return redirect(url_for('profile'))
-    return render_template('edit_user.html', user=user)
+    }
+
+    data = user_schema.load(parsed)
+
+    user.name = data.name
+    user.surname = data.surname
+    user.email = data.email
+    user.age = data.age
+    s.commit()
+    return user_schema.dump(user)
 
 
-@app.route('/user/<user_id>/delete', methods=["GET"])
+@app.route('/user/<user_id>/delete', methods=["DELETE"])
 def delete_user(user_id):
-    print(request.method)
     user = s.query(User).filter(User.id == user_id).one_or_none()
-    print(user)
     if user is None:
         return 'The tutor doesn`t exist', 400
     if current_user.email != user.email:
@@ -164,6 +160,38 @@ def delete_user(user_id):
     s.delete(user)
     s.commit()
     return redirect(url_for("create_user"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @app.route('/courses', methods=['GET', 'POST'])

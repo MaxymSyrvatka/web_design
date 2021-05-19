@@ -1,5 +1,5 @@
 from marshmallow import Schema, fields, post_load, validate
-from models import User, Course, Request
+from backend.models import User, Course, Request
 
 
 class UserSchema(Schema):
