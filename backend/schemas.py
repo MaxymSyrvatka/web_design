@@ -20,7 +20,7 @@ class CourseSchema(Schema):
     id = fields.Int(required=True)
     student_number = fields.Int()
     name = fields.Str()
-    tutor_email = fields.Int()
+    tutor_id = fields.Int()
     description = fields.Str()
     students = fields.List(fields.Nested(UserSchema(only=["email"])))
 
@@ -32,8 +32,9 @@ class CourseSchema(Schema):
 class RequestSchema(Schema):
     id = fields.Int(required=True)
     status = fields.Str(validate = validate.OneOf(["placed", "approved", "disapproved"]))
-    student_email = fields.Str()
+    student_id = fields.Int()
     course_id = fields.Int()
+    tutor_id = fields.Int()
 
     @post_load
     def request_create(self, data, **kwargs):

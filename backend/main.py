@@ -47,29 +47,18 @@ def index():
 
 @app.route('/profile')
 def profile():
-    tutor_name = {}
-    course_request = {}
-    roles = {"tutor": Role.tutor, "student": Role.student}
-    status = {"sent": RequestStatus.placed, "approved": RequestStatus.approved, "disapproved": RequestStatus.delivered}
     if current_user.role == Role.tutor:
         courses = s.query(Course).filter(Course.tutor_id == current_user.id)
-        for course in courses:
-            requests = s.query(Request).filter(Request.course_id == course.id)
-            for request in requests:
-                course_request[request.id] = course.name
+        requests = s.query(Request).filter(Request.tutor_id == current_user.id)
     else:
         courses = s.query(Course).filter(Course.students.any(User.id == current_user.id))
         requests = s.query(Request).filter(Request.student_id == current_user.id)
-    for course in courses:
-        tutor = s.query(User).filter(User.id == current_user.id).one_or_none()
-        tutor_name[current_user.id] = tutor.name
     courses = CourseSchema(many=True).dump(courses)
     user = UserSchema().dump(current_user)
     requests = RequestSchema(many=True).dump(requests)
+    all_courses = CourseSchema(many=True).dump(s.query(Course).all())
 
-    return jsonify(user=user, requests=requests, courses=courses)
-    # return render_template('profile.html', courses=courses, roles=roles, requests=requests,
-    #                       status=status, course_request=course_request)
+    return jsonify(user=user, requests=requests, courses=courses, all_courses=all_courses)
 
 
 @app.route('/users_list', methods=['GET'])
@@ -159,71 +148,38 @@ def delete_user(user_id):
         return 'You don`t have a permission to delete this tutor!', 401
     s.delete(user)
     s.commit()
-    return redirect(url_for("create_user"))
+    return 'User is deleted!'
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@app.route('/courses', methods=['GET', 'POST'])
+@app.route('/courses', methods=['GET'])
 def show_all_courses():
     courses = s.query(Course).all()
-    return render_template("courses.html", courses=courses)
+    return jsonify(CourseSchema(many=True).dump(courses))
 
 
-@app.route('/courses/<course_id>')
-def show_all_courses_ajax(course_id):
-    course = s.query(Course).filter(Course.id == course_id).one_or_none()
-    return {"name": course.name, "student_number": course.student_number, "description": course.description}
-
-
-@app.route('/course', methods=['GET', 'POST'])
+@app.route('/course', methods=['POST'])
 def create_course():
     if not current_user.is_authenticated:
         return "Please, log in!"
     if current_user.role == Role.student:
         return "You don`t have permissions to create course!"
-    if request.method == 'POST':
-        name = request.form.get('name')
-        description = request.form.get('description')
+    course_data = request.json
+    autoinc = len(s.query(Course).all())
+    course_schema = CourseSchema()
+    print(current_user.id)
+    parsed = {
+        'id': autoinc + 1,
+        'tutor_id': current_user.id,
+        'description': course_data['description'],
+        'name': course_data['name'],
+        'student_number': 0,
+        'students': []
+    }
+    course = course_schema.load(parsed)
 
-        if (s.query(Course).filter(Course.name == name).one_or_none() is not None):
-            return redirect(url_for('create_course'))
-        course = Course(name=name, description=description, student_number=0, tutor_id=current_user.id)
-
-        s.add(course)
-        s.commit()
-        return redirect(url_for('profile'))
-    return render_template("add_course.html")
+    s.add(course)
+    s.commit()
+    return 'Course is created!'
 
 
 @app.route('/course/<course_id>/update', methods=["GET", 'POST'])
@@ -256,7 +212,7 @@ def update_course(course_id):
     return render_template('edit_course.html', course=course)
 
 
-@app.route('/course/<course_id>/delete', methods=['GET'])
+@app.route('/course/<course_id>/delete', methods=['DELETE'])
 def delete_course(course_id):
     if not current_user.is_authenticated:
         return "Please, log in!"
@@ -268,50 +224,47 @@ def delete_course(course_id):
         return 'The course doesn`t exist', 400
     if current_user.email != tutor.email:
         return 'You don`t have a permission to delete this course!', 401
+    s.commit()
     s.delete(course)
     s.commit()
-    return redirect(url_for("profile"))
+    return 'Course is deleted!'
 
 
-@app.route('/user/request', methods=["GET", 'POST'])
+@app.route('/request', methods=['POST'])
 def create_request():
     if not current_user.is_authenticated:
         return "Please, log in!"
     if current_user.role == Role.tutor:
         return "You don`t have permissions to create request!"
 
-    if request.method == 'POST':
-        student = s.query(User).filter(User.id == current_user.id).one_or_none()
+    student = s.query(User).filter(User.id == current_user.id).one_or_none()
 
-        if student is None:
-            return 'The student doesn`t exist', 400
-        if current_user.email != student.email:
-            return 'You don`t have a permission to delete this course!', 401
+    if student is None:
+        return 'The student doesn`t exist', 400
 
-        course_name = request.form.get("name")
-        course = s.query(Course).filter(Course.name == course_name).one_or_none()
+    autoinc = len(s.query(Request).all())
+    course_data = request.json
+    request_schema = RequestSchema()
+    course = s.query(Course).filter(Course.name == course_data['course_name']).one_or_none()
+    parsed = {
+        'id': autoinc + 1,
+        'status': 'placed',
+        'student_id': current_user.id,
+        'course_id': course.id,
+        'tutor_id': course.tutor_id
+    }
 
-        if course is None:
-            return 'The course doesn`t exist', 400
-        if course.student_number > 5:
-            return 'You can not join this course', 500
+    if course is None:
+        return 'The course doesn`t exist', 400
 
-        request_schema = RequestSchema()
+    new_request = request_schema.load(parsed)
 
-        new_request = Request(course_id=course.id, student_id=current_user.id, status='placed')
-
-        old_requests = s.query(Request).filter(Request.student_id == current_user.id).filter(Request.course_id == course.id)
-
-        if old_requests is None:
-            return 'This request has been sent earlier. Wait for approving', 400
-
-        s.add(new_request)
-        s.commit()
-        return redirect(url_for("profile"))
-    return render_template("add_request.html")
+    s.add(new_request)
+    s.commit()
+    return "Request is created!"
 
 
-@app.route('/user/approve_request/<request_id>', methods=['GET'])
+@app.route('/user/approve_request/<request_id>', methods=['PUT'])
 def approve_request(request_id):
     if not current_user.is_authenticated:
         return "Please, log in!"
@@ -343,37 +296,33 @@ def approve_request(request_id):
     course.students.append(student)
 
     s.commit()
-    return redirect(url_for("profile"))
+    return "Done!"
 
 
-@app.route('/user/disapprove_request/<request_id>', methods=["GET", 'POST'])
+@app.route('/user/disapprove_request/<request_id>', methods=['PUT'])
 def disapprove_request(request_id):
     if not current_user.is_authenticated:
         return "Please, log in!"
-    if current_user.role == Role.tutor:
-        return "You don`t have permissions to create request!"
-    if request.method == 'POST':
-        tutor = s.query(User).filter(User.id == current_user.id).one_or_none()
-        if tutor is None:
-            return 'The tutor doesn`t exist', 400
+    tutor = s.query(User).filter(User.id == current_user.id).one_or_none()
+    if tutor is None:
+        return 'The tutor doesn`t exist', 400
 
-        student_request = s.query(Request).filter(Request.id == request_id).one_or_none()
-        if student_request is None:
-            return 'The request doesn`t exist', 400
+    student_request = s.query(Request).filter(Request.id == request_id).one_or_none()
+    if student_request is None:
+        return 'The request doesn`t exist', 400
 
-        if auth.current_user() != tutor.email:
-            return 'You don`t have a permission to approve(disapprove) the request!', 401
+    if current_user.email != tutor.email:
+        return 'You don`t have a permission to approve(disapprove) the request!', 401
 
-        student_request.status = 'delivered'
+    student_request.status = 'delivered'
 
-        current_course = s.query(Course).filter(Course.id == student_request.course_id).one_or_none()
+    current_course = s.query(Course).filter(Course.id == student_request.course_id).one_or_none()
 
-        if int(current_course.tutor_id) != int(tutor.id):
-            return 'You don`t have a permission to approve the request!', 401
+    if int(current_course.tutor_id) != int(tutor.id):
+        return 'You don`t have a permission to approve the request!', 401
 
-        s.commit()
-        return redirect(url_for("profile"))
-    return "Done!!!"
+    s.commit()
+    return "Done!"
 
 
 if __name__ == '__main__':

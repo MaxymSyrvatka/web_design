@@ -58,6 +58,7 @@ class Request(Base):
     id = Column(Integer, primary_key=True)
     status = Column(Enum(RequestStatus))
     student_id = Column(Integer, ForeignKey(User.id))
+    tutor_id = Column(Integer, ForeignKey(User.id))
     course_id = Column(Integer, ForeignKey(Course.id))
 
 

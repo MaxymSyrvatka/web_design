@@ -29,25 +29,24 @@ CREATE TABLE users(
 
 CREATE TABLE course(
   id SERIAL,
-  name VARCHAR,
---   tutor_id INTEGER,
+  name VARCHAR UNIQUE,
   tutor_id INTEGER,
   student_number INTEGER,
   description TEXT,
---  students VARCHAR,
   PRIMARY KEY (id),
   FOREIGN KEY (tutor_id) REFERENCES users(id)
 
 );
 CREATE TABLE request(
   id SERIAL,
---   student_id INTEGER,
   student_id INTEGER,
   course_id INTEGER,
+  tutor_id INTEGER,
   status VARCHAR,
   PRIMARY KEY (id),
   FOREIGN KEY (student_id) REFERENCES users(id),
-  FOREIGN KEY (course_id) REFERENCES course(id)
+  FOREIGN KEY (course_id) REFERENCES course(id),
+  FOREIGN KEY (tutor_id) REFERENCES users(id)
 );
 
 CREATE TABLE students_in_course(
