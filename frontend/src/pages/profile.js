@@ -69,18 +69,6 @@ export default class Profile extends Component {
                 return response.json();
             })
     }
-    deleteCourse = id => { // TODO
-        fetch(`/course/${id}/delete`, {
-            method: "DELETE",
-            headers: {
-                "Content-Type": "application/json",
-            },
-        })
-            .then(response => {
-                window.location.reload();
-                return response.json();
-            })
-    }
 
     disapproveRequest = id => {
         fetch(`/user/disapprove_request/${id}`, {
@@ -174,7 +162,7 @@ export default class Profile extends Component {
                                  border="0"/>
                             <div className="container">
                                 <div className="head">
-                                    <h1>{this.state.user.name} {this.state.user.surname}</h1>
+                                    <h1 data-testid="name">{this.state.user.name} {this.state.user.surname}</h1>
                                     <div className="actions">
                                         <a className="edit">
                                             <i className="fa fa-edit"
@@ -225,12 +213,6 @@ export default class Profile extends Component {
                                          return (<p>{course.description}</p>)
                                      }
                                  })()}
-                                 {/*<div className="flex-row-center">*/} {/*TODO*/}
-                                 {/*    <div className="actions">*/}
-                                 {/*        <a className="delete" onClick={this.deleteCourse(course.id)}><i*/}
-                                 {/*            className="fa fa-trash"/></a>*/}
-                                 {/*    </div>*/}
-                                 {/*</div>*/}
                              </div>
                                  )}
                          </div>
